@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>لعبة موسوعة كرة القدم ⚽</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  font-family: Arial;
+  background:#0f2027;
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+input,button,select{
+  padding:10px;
+  font-size:16px;
+  border-radius:10px;
+  border:none;
+  margin:6px;
+}
+button{background:#1abc9c;cursor:pointer}
+.answer{
+  background:#444;
+  padding:12px;
+  margin:6px auto;
+  max-width:420px;
+  border-radius:12px;
+  font-weight:bold;
+  cursor:pointer;
+  color:#222;
+}
+.open{
+  color:black;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🎮 لعبة موسوعة كرة القدم</h2>
+
+<div id="setup">
+  <p>أدخل أسماء اللاعبين</p>
+  <input id="playerInput" placeholder="اسم اللاعب">
+  <button onclick="addPlayer()">إضافة</button>
+  <div id="playersList"></div>
+
+  <p>اختر سؤال البداية</p>
+  <select id="questionSelect"></select>
+  <button onclick="startGame()">ابدأ اللعبة</button>
+</div>
+
+<div id="game" style="display:none">
+  <h3 id="question"></h3>
+  <div id="answers"></div>
+  <h3 id="turnText"></h3>
+  <input id="guess" placeholder="اكتب الاسم أو جزء منه">
+  <button onclick="check()">تأكيد</button>
+  <button onclick="nextQuestion()">التالي ⏩</button>
+
+  <h3>🏆 النقاط</h3>
+  <div id="scoresDiv"></div>
+</div>
+
+<script>
+const colors = ["#1abc9c","#3498db","#9b59b6","#e67e22","#e74c3c","#f1c40f","#2ecc71","#ff69b4","#00ffff","#ff1493"];
+
+const data = [
+  {title:"أكثر 10 لاعبين تسجيلاً للأهداف في تاريخ الدوري الإنجليزي",
+   list:["آلان شيرر","هاري كين","واين روني","محمد صلاح","أندرو كول","سيرجيو أجويرو","فرانك لامبارد","تييري هنري","روبي فاولر","جيرمين ديفو"]},
+  {title:"ترتيب أول 10 أندية في الدوري الإنجليزي الموسم 2024-2025",
+   list:["ليفربول","آرسنال","مانشستر سيتي","تشيلسي","نيوكاسل يونايتد","أستون فيلا","نوتنغهام فورست","برايتون","بورنموث","برينتفورد"]},
+  {title:"أكثر 10 لاعبين مشاركة في الدوري الإنجليزي",
+   list:["جاريث باري","ريان جيجز","فرانك لامبارد","جيمس ميلنر","إيميل هيسكي","مارك شوارزر","ديفيد جيمس","أشلي كول","تيدي شيرينغهام","سول كامبل"]},
+  {title:"أكثر 10 لاعبين تسجيلًا في دوري أبطال أوروبا",
+   list:["كريستيانو رونالدو","ليونيل ميسي","ليفاندوفسكي","بنزيما","راؤول","مولر","فان نيستلروي","تييري هنري","مبابي","محمد صلاح"]},
+  {title:"أكثر 10 منتخبات فوزًا بكأس العالم",
+   list:["البرازيل","ألمانيا","إيطاليا","الأرجنتين","فرنسا","أوروجواي","إنجلترا","إسبانيا","هولندا","كرواتيا"]},
+  {title:"أكثر 10 لاعبين حصولًا على الكرة الذهبية",
+   list:["ليونيل ميسي","كريستيانو رونالدو","ميشيل بلاتيني","يوهان كرويف","فرانز بكنباور","رونالدو نازاريو","ألفريدو دي ستيفانو","لوكا مودريتش","زين الدين زيدان","ريفالدو"]},
+  {title:"أكثر 10 أندية فوزًا بدوري أبطال أوروبا",
+   list:["ريال مدريد","ميلان","بايرن ميونخ","ليفربول","برشلونة","أياكس","إنتر ميلان","مانشستر يونايتد","تشيلسي","نوتنجهام فورست"]},
+  {title:"أكثر 10 لاعبين صناعة أهداف في البريميرليج",
+   list:["ريان جيجز","كيفن دي بروين","سيسك فابريجاس","فرانك لامبارد","واين روني","ديفيد سيلفا","ستيفن جيرارد","جيمس ميلنر","محمد صلاح","سون هيونج مين"]},
+  {title:"أشهر 10 لاعبين مصريين تاريخيًا",
+   list:["محمد صلاح","أحمد حسن","الحضري","حسام حسن","ميدو","محمد النني","أحمد حجازي","عمرو زكي","رمضان صبحي","طارق حامد"]},
+  {title:"أفضل 10 حراس مرمى في التاريخ",
+   list:["جيانلويجي بوفون","إيكر كاسياس","بيتر تشيك","مانويل نوير","إدوين فان دير سار","أوليفر كان","تيبو كورتوا","أليسون","ديفيد دي خيا","مارك أندريه تير شتيجن"]},
+  {title:"ترتيب أول 10 أندية في الدوري الإنجليزي الموسم 2023-2024",
+   list:["مان سيتي","آرسنال","ليفربول","أستون فيلا","توتنهام","تشيلسي","نيوكاسل يونايتد","مان يونايتد","وست هام","برايتون"]},
+  {title:"ترتيب أول 10 فرق في الدوري الإسباني موسم 2024-2025",
+   list:["ريال مدريد","برشلونة","أتلتيكو مدريد","فالنسيا","سيلتا فيغو","إشبيلية","ريال سوسيداد","إسبانيول","فياريال","أوساسونا"]},
+  {title:"ترتيب آخر 10 انديه في الدوري الانجليزي موسم 2022-2023",
+   list:["ساوثهامتون","ليدز","ليستر","ايفرتون","نوتنجهام","بورنموث","وست هام","تشيلسي","ولفرهامتون","كريستال بالاس"]},
+  {title:"ترتيب اول 10 هدافين للبريمرليج موسم 2024-2025",
+   list:[" محمد صلاح","ايساك","هالاند","كريس وود","مبومو","ويسا","اولي واتكينز","كونيا","بالمر","ستراند لارسن"]},
+  {title:"ترتيب اكثر 10 انديه تسجيلا للاهداف في الدوري النجليزي موسم 2023-2024",
+   list:["مان سيتي","ارسنال","ليفربول","نيوكاسل ","تشيلسي","استون فيلا","توتنهام","وست هام","كريستال بالاس","مان يونايتد"]},
+  {title:"اكثر 10 حراس تصديا في الدوري الانجليزي موسم 2025-2026",
+   list:["دوبرافكا","روفس","اريولا","فيربيجن","بيتروفيتش","كيليهر","فيكاريو","بيكفورد","لينو","هيندرسون"]},
+  {title:"ترتيب اول 10 هدافين للبريمرليج موسم 2023-2024",
+   list:["هالاند","بالمر","ايساك","فودين","واتكينز","سولانكي","صلاح","مين سون","ماتيتا","ساكا او بوين"]},
+  {title:"ترتيب اكثر 10 لاعبين صناعه للاهداف موسم 2024-2025",
+   list:["صلاح","ميرفي","ايلانجا","دامسجارد","روجرز","ساكا","روبينسون","برونو فيرنانديز","سون","سافينيو"]},
+  {title:"ترتيب اول 10 انديه في الدوري الانجليزي موسم 2022-2023",
+   list:["مان سيتي","ارسنال","مان يونايتد","نيوكاسل","ليفربول","برايتون","استون فيلا","توتنهام","برينتفورد","فولهام"]},
+  {title:"اكثر 10 انديه تسجيلا للاهداف في الدوري الانجليزي موسم 2024-2025",
+   list:["ليفربول","مان سيتي","ارسنال","نيوكاسل","برينتفورد","برايتون","تشيلسي","توتنهام","بورنموث","استون فيلا"]},
+  {title:"ترتيب اول 10 انديه في الدوري الانجليزي موسم 2021-2022",
+   list:["مان سيتي","ليفربول","تشيلسي","توتنهام","ارسنال","مان يونايتد","وست هام","ليستر سيتي","برايتون","ولفرهامتون"]},
+  {title:"ترتيب آخر 10 انديه في الدوري الانجليزي موسم 2021-2022",
+   list:["نوريتش سيتي","واتفورد","بيرنلي","ليدز","ايفرتون","ساوثهامتون","استون فيلا","برينتفورد","كريستال بالاس","نيوكاسل يونايتد"]},
+  {title:"اكثر 10 لاعبين صناعه للاهداف موسم 2023-2024",
+   list:["اولي واتكينز","بالمر","صلاح","كيفن دي بروين","اوديجارد","جوردن","جيبس وايت","بينان جونسون","تريبير","باسكال جروب"]},
+
+];
+
+let players=[], scores={}, turn=0, opened=[];
+let currentQuestionIndex, current;
+
+// إعداد الأسئلة
+data.forEach((q,i)=>{
+  let opt=document.createElement("option");
+  opt.value=i;
+  opt.innerText=q.title;
+  questionSelect.appendChild(opt);
+});
+
+function addPlayer(){
+  let n=playerInput.value.trim();
+  if(!n) return;
+  players.push(n);
+  scores[n]=0;
+  playersList.innerHTML += `👤 ${n}<br>`;
+  playerInput.value="";
+}
+
+function startGame(){
+  if(players.length<2) return alert("لازم لاعبين على الأقل");
+  setup.style.display="none";
+  game.style.display="block";
+  currentQuestionIndex=parseInt(questionSelect.value);
+  loadQuestion();
+}
+
+function loadQuestion(){
+  opened=[];
+  answers.innerHTML="";
+  turn=0;
+  current=data[currentQuestionIndex];
+  question.innerText=current.title;
+
+  current.list.forEach((_,i)=>{
+    let d=document.createElement("div");
+    d.className="answer";
+    d.id="a"+i;
+    d.style.background=colors[i%colors.length];
+    d.innerText=i+1;
+    answers.appendChild(d);
+  });
+
+  updateTurn();
+  updateScores();
+}
+
+function updateTurn(){
+  turnText.innerText="🎯 الدور على: "+players[turn];
+}
+
+function updateScores(){
+  scoresDiv.innerHTML="";
+  for(let p in scores){
+    scoresDiv.innerHTML+=`${p}: ${scores[p]} نقطة<br>`;
+  }
+}
+
+// توحيد النص (تشيل مسافات + تحويل لحروف صغيرة)
+function normalize(t){
+  return t.toLowerCase().replace(/\s+/g,"");
+}
+
+// ✅ الدالة الأهم (التصحيح + قبول الاختصار)
+function check(){
+  let g=guess.value.trim();
+  if(!g) return;
+
+  let gNorm=normalize(g);
+  let gainedPoints=0;
+
+  current.list.forEach((a,i)=>{
+    if(opened.includes(i)) return;
+
+    let aNorm=normalize(a);
+
+    // 👈 يقبل أي جزء من الاسم
+    if(aNorm.includes(gNorm)){
+      opened.push(i);
+      let box=document.getElementById("a"+i);
+      box.className="answer open";
+      box.innerText=`${i+1}️⃣ ${a}`;
+      gainedPoints=i+1;
+    }
+  });
+
+  if(gainedPoints>0){
+    scores[players[turn]]+=gainedPoints;
+  }
+
+  turn=(turn+1)%players.length;
+
+  if(opened.length===current.list.length){
+    showRanking();
+  }
+
+  guess.value="";
+  updateTurn();
+  updateScores();
+}
+
+function showRanking(){
+  let rank=Object.keys(scores).sort((a,b)=>scores[b]-scores[a]);
+  let msg="🏆 الترتيب:\n";
+  rank.forEach(p=>msg+=`${p}: ${scores[p]} نقطة\n`);
+  alert(msg);
+}
+
+function nextQuestion(){
+  currentQuestionIndex=(currentQuestionIndex+1)%data.length;
+  loadQuestion();
+}
+</script>
+
+</body>
+</html>
